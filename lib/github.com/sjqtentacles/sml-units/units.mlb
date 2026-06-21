@@ -1,0 +1,8 @@
+(* MLton basis file for the sml-units library.
+ * Consumers can include this file to bring `structure Units` into scope. *)
+local
+  $(SML_LIB)/basis/basis.mlb
+in
+  units.sig
+  units.sml
+end
