@@ -38,6 +38,7 @@ the sources in order.
 make test        # build + run the suite under MLton (default)
 make test-poly   # run the suite under Poly/ML
 make all-tests   # run under both
+make example     # build + run the demo
 make clean
 ```
 
@@ -120,6 +121,24 @@ dedicated helpers in `Temperature`:
 U.Temperature.fromCelsius 0.0                 (* 273.15 K *)
 U.Temperature.toFahrenheit
   (U.Temperature.fromCelsius 100.0)           (* 212.0 *)
+```
+
+## Example
+
+[`examples/demo.sml`](examples/demo.sml) converts a speed, derives a force and
+an energy from base quantities, and does affine temperature conversions.
+Dimensions print via the deterministic `Dim.toString`; magnitudes come from
+`convert` and are rendered with a forced-decimal formatter (fixed 6 fractional
+digits) rather than `Real.toString`, so the output is identical on every run
+and on both compilers. Run it with:
+
+```
+$ make example
+90 km/h in m/s = 25.000000   dim = m s^-1
+2 kg * 3 m/s^2 = 6.000000 N   dim = kg m s^-2
+10 N * 5 m     = 50.000000 J   dim = kg m^2 s^-2
+100 C in F     = 212.000000
+32 F in C      = 0.000000
 ```
 
 ## Project layout
