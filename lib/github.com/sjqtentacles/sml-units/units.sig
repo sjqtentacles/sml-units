@@ -72,6 +72,21 @@ sig
   (* Scale a quantity by a dimensionless real. *)
   val scale : real * quantity -> quantity
 
+  (* Unit conversion.
+
+     Because a quantity is always stored in SI base units, a "unit" is itself a
+     quantity whose magnitude is the size of one such unit in SI base units --
+     e.g. `Units.metre` is 1 m, `Prefix.kilo Units.metre` is 1 km (= 1000 m),
+     `Units.hour` is 1 h (= 3600 s).
+
+     `convert (q, unit)` re-expresses `q` as a plain number of those units,
+     i.e. `magnitude q / magnitude unit`, provided the dimensions agree.
+     It raises `Dimension` on a mismatch (e.g. metres to seconds); `convertOpt`
+     returns `NONE` instead. Conversion is purely multiplicative and so does
+     not cover affine scales such as degrees Celsius -- see `Temperature`. *)
+  val convert    : quantity * quantity -> real
+  val convertOpt : quantity * quantity -> real option
+
   (* Comparison requires matching dimensions (raises `Dimension` otherwise). *)
   val equal   : quantity * quantity -> bool
   val compare : quantity * quantity -> order
@@ -99,5 +114,42 @@ sig
     val hertz   : quantity   (* 1 / s           *)
     val coulomb : quantity   (* A s             *)
     val volt    : quantity   (* W / A           *)
+
+    (* A couple of common non-SI time units, each expressed in seconds, handy
+       as conversion targets. *)
+    val minute  : quantity   (* 60 s            *)
+    val hour    : quantity   (* 3600 s          *)
+  end
+
+  (* SI decimal prefixes. Each scales a unit (or any quantity) by its power of
+     ten, preserving the dimension: `Prefix.kilo Units.metre` is 1 km, i.e. a
+     quantity of magnitude 1000 with the length dimension. *)
+  structure Prefix :
+  sig
+    val tera  : quantity -> quantity   (* 10^12  *)
+    val giga  : quantity -> quantity   (* 10^9   *)
+    val mega  : quantity -> quantity   (* 10^6   *)
+    val kilo  : quantity -> quantity   (* 10^3   *)
+    val hecto : quantity -> quantity   (* 10^2   *)
+    val deca  : quantity -> quantity   (* 10^1   *)
+    val deci  : quantity -> quantity   (* 10^-1  *)
+    val centi : quantity -> quantity   (* 10^-2  *)
+    val milli : quantity -> quantity   (* 10^-3  *)
+    val micro : quantity -> quantity   (* 10^-6  *)
+    val nano  : quantity -> quantity   (* 10^-9  *)
+    val pico  : quantity -> quantity   (* 10^-12 *)
+  end
+
+  (* Affine temperature scales. Multiplicative `convert` cannot express the
+     273.15 K / 32 degF offsets, so these dedicated helpers build a temperature
+     `quantity` (stored in kelvin) from a Celsius or Fahrenheit reading and
+     recover the reading from a temperature. The projections raise `Dimension`
+     if handed a non-temperature quantity. *)
+  structure Temperature :
+  sig
+    val fromCelsius    : real -> quantity
+    val toCelsius      : quantity -> real
+    val fromFahrenheit : real -> quantity
+    val toFahrenheit   : quantity -> real
   end
 end

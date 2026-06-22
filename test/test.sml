@@ -133,6 +133,65 @@ fun run () =
                    (U.toString (U.scalar 2.5) = Real.toString 2.5)
     val () = check "quantity toString has unit suffix"
                    (U.toString threeMetres = Real.toString 3.0 ^ " m")
+
+    (* Unit conversion: convert (q, unit) re-expresses q in those units. *)
+    val km = U.Prefix.kilo Un.metre
+    val () = check "1 km = 1000 m"
+                   (close (U.convert (km, Un.metre), 1000.0))
+    val () = check "1000 m = 1 km"
+                   (close (U.convert (U.scale (1000.0, Un.metre), km), 1.0))
+    val () = check "1 hour = 3600 s"
+                   (close (U.convert (Un.hour, Un.second), 3600.0))
+    val () = check "60 min = 1 hour"
+                   (close (U.convert (U.scale (60.0, Un.minute), Un.hour), 1.0))
+    val () = check "convert metre in itself = 1"
+                   (close (U.convert (Un.metre, Un.metre), 1.0))
+    val () = check "convert m -> s raises Dimension"
+                   (raisesDimension (fn () => U.convert (Un.metre, Un.second)))
+    val () = check "convertOpt m -> s is NONE"
+                   (case U.convertOpt (Un.metre, Un.second)
+                      of NONE => true | SOME _ => false)
+    val () = check "convertOpt km -> m is SOME 1000"
+                   (case U.convertOpt (km, Un.metre)
+                      of SOME v => close (v, 1000.0) | NONE => false)
+    (* Round-trip: 5 km in m, then back to km. *)
+    val fiveKm = U.scale (5.0, km)
+    val () = check "convert round-trips within eps"
+                   (close (U.convert (U.scale (U.convert (fiveKm, Un.metre),
+                                               Un.metre), km), 5.0))
+
+    (* SI prefixes scale magnitude, preserve dimension. *)
+    val () = check "Prefix.kilo metre = 1000 m"
+                   (close (U.magnitude km, 1000.0)
+                    andalso Dim.equal (U.dim km, Dim.length))
+    val () = check "Prefix.milli metre = 0.001 m"
+                   (close (U.magnitude (U.Prefix.milli Un.metre), 0.001))
+    val () = check "Prefix.micro second = 1e-6 s"
+                   (close (U.magnitude (U.Prefix.micro Un.second), 1E~6))
+    val () = check "kilo then milli round-trips"
+                   (close (U.convert (U.Prefix.milli (U.Prefix.kilo Un.metre),
+                                      Un.metre), 1.0))
+
+    (* Affine temperature scales. *)
+    val () = check "0 degC = 273.15 K"
+                   (close (U.magnitude (U.Temperature.fromCelsius 0.0), 273.15))
+    val () = check "100 degC = 373.15 K"
+                   (close (U.magnitude (U.Temperature.fromCelsius 100.0), 373.15))
+    val () = check "toCelsius (fromCelsius 37) = 37"
+                   (close (U.Temperature.toCelsius
+                             (U.Temperature.fromCelsius 37.0), 37.0))
+    val () = check "32 degF = 273.15 K (= 0 degC)"
+                   (close (U.magnitude (U.Temperature.fromFahrenheit 32.0), 273.15))
+    val () = check "212 degF = 373.15 K (= 100 degC)"
+                   (close (U.magnitude (U.Temperature.fromFahrenheit 212.0), 373.15))
+    val () = check "toFahrenheit (fromCelsius 100) = 212"
+                   (close (U.Temperature.toFahrenheit
+                             (U.Temperature.fromCelsius 100.0), 212.0))
+    val () = check "fromCelsius carries temperature dimension"
+                   (Dim.equal (U.dim (U.Temperature.fromCelsius 0.0),
+                               Dim.temperature))
+    val () = check "toCelsius of non-temperature raises Dimension"
+                   (raisesDimension (fn () => U.Temperature.toCelsius threeMetres))
   in
     print ("\n" ^ Int.toString (!passed) ^ " passed, "
            ^ Int.toString (!failed) ^ " failed\n");

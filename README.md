@@ -91,7 +91,36 @@ val bad = U.scale (3.0, Un.metre) ++ U.scale (1.0, Un.second)
 The named-unit catalogue (`Units.Units`) provides the seven SI base units
 (`kilogram`, `metre`, `second`, `ampere`, `kelvin`, `mole`, `candela`) plus
 common derived units (`newton`, `joule`, `watt`, `pascal`, `hertz`,
-`coulomb`, `volt`), each a quantity of magnitude `1.0`.
+`coulomb`, `volt`) and a couple of non-SI time units (`minute`, `hour`), each
+a quantity expressed in SI base units.
+
+## Conversion, prefixes and temperatures
+
+Since a quantity is always stored in SI base units, a *unit* is just a
+quantity whose magnitude is its size in SI base units. `convert (q, unit)`
+re-expresses `q` as a plain number of those units, raising `Units.Dimension`
+on a dimension mismatch; `convertOpt` returns `NONE` instead.
+
+```sml
+structure U  = Units
+structure Un = Units.Units
+
+val km = U.Prefix.kilo Un.metre              (* 1 km = 1000 m *)
+U.convert (km, Un.metre)                      (* 1000.0 *)
+U.convert (Un.hour, Un.second)                (* 3600.0 *)
+U.convertOpt (Un.metre, Un.second)            (* NONE: m and s differ *)
+```
+
+`Prefix` applies the SI decimal prefixes (`tera` … `pico`, including `kilo`,
+`milli`, `micro`, `nano`) to any quantity, scaling the magnitude and keeping
+the dimension. Conversion is multiplicative, so affine temperature scales get
+dedicated helpers in `Temperature`:
+
+```sml
+U.Temperature.fromCelsius 0.0                 (* 273.15 K *)
+U.Temperature.toFahrenheit
+  (U.Temperature.fromCelsius 100.0)           (* 212.0 *)
+```
 
 ## Project layout
 

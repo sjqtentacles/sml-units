@@ -85,6 +85,12 @@ struct
 
   fun scale (k, (x, d)) = (Real.* (k, x), d)
 
+  fun convert ((x, dx), (u, du)) =
+      if Dim.equal (dx, du) then Real./ (x, u) else raise Dimension
+
+  fun convertOpt (q as (_, dx), unit as (_, du)) =
+      if Dim.equal (dx, du) then SOME (convert (q, unit)) else NONE
+
   val op + = add
   val op - = sub
   val op * = mul
@@ -119,5 +125,45 @@ struct
     val hertz   = quot (scalar 1.0, second)
     val coulomb = mul (ampere, second)
     val volt    = quot (watt, ampere)
+
+    val minute  = scale (60.0, second)
+    val hour    = scale (3600.0, second)
+  end
+
+  structure Prefix =
+  struct
+    fun tera  q = scale (1E12,  q)
+    fun giga  q = scale (1E9,   q)
+    fun mega  q = scale (1E6,   q)
+    fun kilo  q = scale (1E3,   q)
+    fun hecto q = scale (1E2,   q)
+    fun deca  q = scale (1E1,   q)
+    fun deci  q = scale (1E~1,  q)
+    fun centi q = scale (1E~2,  q)
+    fun milli q = scale (1E~3,  q)
+    fun micro q = scale (1E~6,  q)
+    fun nano  q = scale (1E~9,  q)
+    fun pico  q = scale (1E~12, q)
+  end
+
+  structure Temperature =
+  struct
+    val zeroCelsius = 273.15   (* K *)
+
+    fun fromCelsius c = (Real.+ (c, zeroCelsius), Dim.temperature)
+
+    fun toCelsius (k, d) =
+        if Dim.equal (d, Dim.temperature)
+        then Real.- (k, zeroCelsius)
+        else raise Dimension
+
+    fun fromFahrenheit f =
+        (Real.+ (Real.* (Real.- (f, 32.0), Real./ (5.0, 9.0)), zeroCelsius),
+         Dim.temperature)
+
+    fun toFahrenheit (k, d) =
+        if Dim.equal (d, Dim.temperature)
+        then Real.+ (Real.* (Real.- (k, zeroCelsius), Real./ (9.0, 5.0)), 32.0)
+        else raise Dimension
   end
 end
